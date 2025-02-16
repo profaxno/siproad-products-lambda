@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  aws:
+    image: localstack/localstack
+    container_name: ${DOCKER_LOCAL_STACK_CONTAINER_NAME}
+    environment:
+      - DOCKER_HOST=tcp://host.docker.internal:2375
+      - SERVICES=sqs,sns,lambda,cloudwatch,logs
+      - AWS_DEFAULT_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    ports:
+      - "${DOCKER_LOCAL_STACK_PORT}:${DOCKER_LOCAL_STACK_PORT}"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./${DOCKER_LOCAL_STACK_VOLUMEN}:/var/lib/localstack"
