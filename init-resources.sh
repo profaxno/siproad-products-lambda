@@ -54,7 +54,7 @@ LAMBDA_NAME="siproad-products-lambda"
 LAMBDA_RUNTIME="nodejs18.x"
 LAMBDA_HANDLER="dist/main.handler"
 LAMBDA_ROLE="arn:aws:iam::000000000000:role/lambda-role"  # Puede ser cualquier valor simulado
-LAMBDA_ZIP_PATH="/etc/localstack/siproad-products-lambda.zip"
+LAMBDA_ZIP_PATH="/etc/localstack/lambda.zip"
 
 # Verifica si el archivo ZIP existe antes de crear el Lambda
 if [ -f "$LAMBDA_ZIP_PATH" ]; then

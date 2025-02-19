@@ -15,5 +15,5 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./${DOCKER_LOCAL_STACK_VOLUMEN}:/var/lib/localstack"
-      - ./siproad-products-lambda.zip:/etc/localstack/siproad-products-lambda.zip
+      - ./lambda.zip:/etc/localstack/lambda.zip
       - ./init-resources.sh:/etc/localstack/init-resources.sh
