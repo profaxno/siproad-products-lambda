@@ -1,19 +1,32 @@
-import { NestFactory } from '@nestjs/core';
-import { ProductsLambdaService } from './products-lambda/products-lambda.service';
-import { ProductsLambdaModule } from './products-lambda/products-lambda.module';
 import { APIGatewayEvent, Context, Callback, Handler, SQSEvent } from 'aws-lambda';
+
+import { NestFactory } from '@nestjs/core';
+
 import { AppModule } from './app.module';
+import { ProductsLambdaService } from './products-lambda/products-lambda.service';
 
 async function bootstrap(event: any, context: Context) {
+
+  // * create NestJs application
   const app = await NestFactory.create(AppModule);
   const service = app.get(ProductsLambdaService);
 
+  const env = process.env.ENV.padEnd(20, ' ');
 
-  console.log('>>> siproad-products-lambda: starting process... event=', JSON.stringify(event));
+  console.log(`
+╔═══════════════════════════════╗
+║ @org: Profaxno Company        ║
+║ @app: siproad-products-lambda ║
+║ @env: ${env} ║
+╚═══════════════════════════════╝
+`)
 
-  return service.handleEvent(event)
+  // * process event
+  console.log(`>>> siproad-products-lambda: starting process... event=${JSON.stringify(event)}`);
+
+  return service.processEvent(event)
   .then( (response) => {
-    console.log('<<< siproad-products-lambda: executed successfully');
+    console.log('<<< siproad-products-lambda: executed');
     return response;
   })
   .catch((error) => {
@@ -24,26 +37,3 @@ async function bootstrap(event: any, context: Context) {
 }
 
 export const handler: Handler = bootstrap;
-
-// async function bootstrap() {
-//   const app = await NestFactory.create(AppModule);
-//   const lambdaService = app.get(ProductsLambdaService);
-
-//   const handler = async (
-//     event: APIGatewayEvent,
-//     context: Context,
-//     callback: Callback
-//   ) => {
-//     try {
-//       const response = await lambdaService.handleEvent(event);
-//       callback(null, response);
-//     } catch (error) {
-//       callback(error);
-//     }
-//   };
-
-//   return handler;
-// }
-
-// export const handler = bootstrap();
-

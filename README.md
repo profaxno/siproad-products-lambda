@@ -3,7 +3,7 @@
 </p>
 
 # siproad-products-lambda
-Lambda que replica la informacion en el microservicio de products.
+Lambda que replica la información en el microservicio de siproad-products-api.
 
 ```
 - Lenguaje: Nodejs (Nest), typescript.
@@ -17,17 +17,23 @@ Lambda que replica la informacion en el microservicio de products.
 * Clonar el proyecto.
 * Clonar el archivo __.env.template__ y renombrar la copia a ```.env```
 * Configurar los valores de las variables de entornos correspondientes ```.env```
-* Ejecutar ```npm install```
+* Actualizar node_modules ```npm install```
+* Compilar lambda ```npm run build```
+* Limpiar node_modules solo dejar las dependencias productivas ```npm prune --production```
+* Comprimir lambda ```7z a siproad-products-lambda.zip dist\* node_modules\* .env package.json```
 
 ### Configuración AWS (docker)
 * Instalar Docker desktop.
+* Activar en Docker la funcion ```Expose daemon on tcp://localhost:2375 without TLS```
 * Descargar imagen de localstack.
 * Instalar AWS CLI desde la pagina de AWS.
 * Crear contenedor de "aws" ```docker-compose -p dev-aws up -d```
 
-### Configuración del lambda (docker)
+### Configuración manual del lambda (docker)
+* Actualizar node_modules ```npm install```
 * Compilar lambda ```npm run build```
-* Comprimir lambda ```7z a siproad-products-lambda.zip dist\* node_modules\* package.json```
+* Limpiar node_modules solo con las dependencias productivas ```npm prune --production```
+* Comprimir lambda ```7z a siproad-products-lambda.zip dist\* node_modules\* package.json .env```
 * Eliminar lambda en AWS (docker) (opcional)
   ```
   aws --endpoint-url=http://localhost:4566 lambda delete-function --function-name siproad-products-lambda
@@ -37,16 +43,10 @@ Lambda que replica la informacion en el microservicio de products.
   aws --endpoint-url=http://localhost:4566 lambda create-function \
     --function-name siproad-products-lambda \
     --runtime nodejs18.x \
-    --role arn:aws:iam::000000000000:role/lambda-role \
     --handler dist/main.handler \
+    --role arn:aws:iam::000000000000:role/lambda-role \
     --zip-file fileb://siproad-products-lambda.zip \
     --timeout 45
-  ```
-* Eliminar suscripcion a sqs en AWS (docker) (opcional)
-  ```
-  aws --endpoint-url=http://localhost:4566 lambda list-event-source-mappings
-
-  aws --endpoint-url=http://localhost:4566 lambda delete-event-source-mapping --uuid <reemplazar por UUID>
   ```
 * Probar lambda
   * Crear archivo payload.json con el siguiente contenido
@@ -62,7 +62,7 @@ Lambda que replica la informacion en el microservicio de products.
       --payload fileb://payload.json \
       output.txt
     ```
-### Configuración de sns, sqs y lambda (docker)
+### Configuración manual de sns, sqs y lambda (docker)
 * Crear topics en SNS
   ```
   aws --endpoint-url=http://localhost:4566 sns create-topic --name siproad-admin-sns
@@ -111,7 +111,8 @@ Lambda que replica la informacion en el microservicio de products.
       aws --endpoint-url=http://localhost:4566 sqs get-queue-attributes \
       --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/siproad-admin-products-sqs \
       --attribute-names QueueArn
-      
+      ```
+      ```
       Respuesta:
       {
           "Attributes": {
@@ -136,7 +137,8 @@ Lambda que replica la informacion en el microservicio de products.
       --topic-arn arn:aws:sns:us-east-1:000000000000:siproad-admin-sns \
       --protocol sqs \
       --notification-endpoint arn:aws:sqs:us-east-1:000000000000:siproad-admin-products-sqs
-      
+      ```
+      ```
       Respuesta:
       {
           "SubscriptionArn": "arn:aws:sns:us-east-1:000000000000:siproad-admin-sns:7d7b4fa0-e33c-4b84-8223-06556d535d80"
@@ -161,7 +163,7 @@ Lambda que replica la informacion en el microservicio de products.
         --topic-arn arn:aws:sns:us-east-1:000000000000:siproad-admin-sns \
         --message "¡Hola par de SQS, desde SNS!"
         ```
-      * Leear mensaje
+      * Leer mensaje
         ```
         aws --endpoint-url=http://localhost:4566 sqs receive-message \
         --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/siproad-admin-products-sqs
@@ -171,13 +173,34 @@ Lambda que replica la informacion en el microservicio de products.
         --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/siproad-admin-orders-sqs
         ```
 * Suscribir lambda a sqs
-  ```
-  aws --endpoint-url=http://localhost:4566 lambda create-event-source-mapping \
-    --function-name siproad-products-lambda \
-    --event-source arn:aws:sqs:us-east-1:000000000000:siproad-admin-products-sqs \
-    --batch-size 10 \
-    --function-response-types ReportBatchItemFailures
-  ```
+  * Eliminar suscripcion a sqs en AWS (docker) (opcional)
+    ```
+    aws --endpoint-url=http://localhost:4566 lambda list-event-source-mappings
+
+    aws --endpoint-url=http://localhost:4566 lambda delete-event-source-mapping --uuid <reemplazar por UUID>
+    ```
+  * Suscribir
+    ```
+    aws --endpoint-url=http://localhost:4566 lambda create-event-source-mapping \
+      --function-name siproad-products-lambda \
+      --event-source arn:aws:sqs:us-east-1:000000000000:siproad-admin-products-sqs \
+      --batch-size 10 \
+      --function-response-types ReportBatchItemFailures
+    ```
+    ```
+    aws --endpoint-url=http://localhost:4566 lambda create-event-source-mapping \
+      --function-name siproad-products-lambda \
+      --event-source arn:aws:sqs:us-east-1:000000000000:siproad-admin-orders-sqs \
+      --batch-size 10 \
+      --function-response-types ReportBatchItemFailures
+    ```
+    ```
+    aws --endpoint-url=http://localhost:4566 lambda create-event-source-mapping \
+      --function-name siproad-products-lambda \
+      --event-source arn:aws:sqs:us-east-1:000000000000:siproad-products-orders-sqs \
+      --batch-size 10 \
+      --function-response-types ReportBatchItemFailures
+    ```
   * Probar lambda suscrito al sqs:
     * Ejecutar endpoint (/siproad-admin/companies/update) para escribir un mensaje en el SNS __siproad-admin-sns__ quien a su vez envia el mensaje al SQS __siproad-admin-products-sqs__ que levanta el LAMBDA __siproad-products-lambda__
       ```

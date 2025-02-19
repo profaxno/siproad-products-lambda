@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
+
 import { ProductsLambdaService } from './products-lambda.service';
+import { ProductsModule } from 'src/products/products.module';
 
 @Module({
-  imports: [],
+  imports: [ProductsModule],
   controllers: [],
   providers: [ProductsLambdaService],
 })

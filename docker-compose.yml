@@ -3,6 +3,7 @@ services:
   aws:
     image: localstack/localstack
     container_name: ${DOCKER_LOCAL_STACK_CONTAINER_NAME}
+    entrypoint: ["/bin/sh", "-c", "/etc/localstack/init-resources.sh & exec docker-entrypoint.sh"]
     environment:
       - DOCKER_HOST=tcp://host.docker.internal:2375
       - SERVICES=sqs,sns,lambda,cloudwatch,logs
@@ -10,7 +11,9 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     ports:
-      - "${DOCKER_LOCAL_STACK_PORT}:${DOCKER_LOCAL_STACK_PORT}"
+      - "${DOCKER_LOCAL_STACK_PORT}:4566"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./${DOCKER_LOCAL_STACK_VOLUMEN}:/var/lib/localstack"
+      - ./siproad-products-lambda.zip:/etc/localstack/siproad-products-lambda.zip
+      - ./init-resources.sh:/etc/localstack/init-resources.sh
