@@ -3,8 +3,7 @@ import { PfxHttpMethodEnum, PfxHttpService } from 'profaxnojs/axios';
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { ProductsResponseDto } from './dto/products-response-dto';
-import { ProductsCompanyDto } from './dto/products-company.dto';
+import { ProductsCompanyDto, ProductsResponseDto } from './dto';
 import { ProductsEnum } from './enum/products.enum';
 
 @Injectable()

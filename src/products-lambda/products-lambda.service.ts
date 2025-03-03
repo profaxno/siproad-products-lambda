@@ -4,7 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { MessageDto } from './dto/data-replication.dto';
 import { ProcessEnum, SourceEnum } from './enum';
-import { Record, Event, Body } from './interface';
+import { Record, Event, Body, JsonBasic } from './interface';
 
 import { ProductsCompanyDto } from 'src/products/dto/products-company.dto';
 import { ProductsResponseDto } from 'src/products/dto/products-response-dto';
@@ -37,7 +37,7 @@ export class ProductsLambdaService {
 
     let i = 0;
     for (const record of event.Records) {
-      this.logger.log(`[${i}] processEvent: processing message, messageId=${record.messageId}`);
+      this.logger.warn(`[${i}] processEvent: processing message, messageId=${record.messageId}`);
 
       await this.processMessage(record)
       .then( (responseDto: ProductsResponseDto) => {
@@ -84,9 +84,9 @@ export class ProductsLambdaService {
       }
 
       if(messageDto.process == ProcessEnum.COMPANY_DELETE) {
-        const dto: ProductsCompanyDto = JSON.parse(messageDto.jsonData);
+        const jsonBasic: JsonBasic = JSON.parse(messageDto.jsonData);
 
-        return this.productsCompanyService.deleteCompany(dto.id)
+        return this.productsCompanyService.deleteCompany(jsonBasic.id)
         .then( (responseDto: ProductsResponseDto) => {
           return responseDto;
         })
