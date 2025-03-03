@@ -12,21 +12,30 @@ Lambda que replica la información en el microservicio de siproad-products-api.
 
 ## Configuración ambiente dev
 
-### Configuración del repo
+### Configuración del lambda
 * Instalar Nest CLI instalado ```npm i -g @nestjs/cli```
 * Clonar el proyecto.
 * Clonar el archivo __.env.template__ y renombrar la copia a ```.env```
 * Configurar los valores de las variables de entornos correspondientes ```.env```
 * Actualizar node_modules ```npm install```
-* Compilar lambda ```npm run build```
-* Limpiar node_modules solo dejar las dependencias productivas ```npm prune --production```
-* Comprimir lambda ```7z a siproad-products-lambda.zip dist\* node_modules\* .env package.json```
+* Construir lambda ```npm run build-lambda```
 
 ### Configuración AWS (docker)
-* Instalar Docker desktop.
-* Activar en Docker la funcion ```Expose daemon on tcp://localhost:2375 without TLS```
-* Descargar imagen de localstack.
 * Instalar AWS CLI desde la pagina de AWS.
+* Instalar Docker desktop.
+  * Limitar memoria del wsl utilizado por docker
+  * Abrir archivo wsl ```notepad %USERPROFILE%\.wslconfig```
+  * Copiar dentro del archivo wslconfig el siguiente contenido:
+    ```
+    [wsl2]
+    memory=2GB   # Limita a 2GB de RAM
+    processors=4  # Usa solo 4 núcleos
+    swap=2GB      # Agrega 2GB de swap
+    ```
+  * Reiniciar wsl ```wsl --shutdown```
+* Abrir Docker Desktop.
+* Descargar imagen de localstack.
+* Activar en Docker la funcion ```Expose daemon on tcp://localhost:2375 without TLS```
 * Crear contenedor de "aws" ```docker-compose -p dev-aws up -d```
 
 ### Configuración manual del lambda (docker)
