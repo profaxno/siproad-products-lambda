@@ -38,6 +38,14 @@ Lambda que replica la información en el microservicio de siproad-products-api.
 * Activar en Docker la funcion ```Expose daemon on tcp://localhost:2375 without TLS```
 * Crear contenedor de "aws" ```docker-compose -p dev-aws up -d```
 
+## Configuración ambiente stg
+
+### Configuración AWS (docker)
+* Apuntar el archivo .env a las variables de staging.
+* Crear contenedor de "aws" docker-compose -p aws up -d
+
+## Configuraciones manuales
+
 ### Configuración manual del lambda (docker)
 * Actualizar node_modules ```npm install```
 * Compilar lambda ```npm run build```
@@ -76,19 +84,10 @@ Lambda que replica la información en el microservicio de siproad-products-api.
   ```
   aws --endpoint-url=http://localhost:4566 sns create-topic --name siproad-admin-sns
   ```
-  ```
-  aws --endpoint-url=http://localhost:4566 sns create-topic --name siproad-products-sns
-  ```
 
 * Crear colas SQS
   ```
   aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name siproad-admin-products-sqs
-  ```
-  ```
-  aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name siproad-admin-orders-sqs
-  ```
-  ```
-  aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name siproad-products-orders-sqs
   ```
 
 * Suscribir SQS a SNS
@@ -98,20 +97,6 @@ Lambda que replica la información en el microservicio de siproad-products-api.
       --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/siproad-admin-products-sqs \
       --attributes '{
         "Policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": \"*\", \"Action\": \"SQS:SendMessage\", \"Resource\": \"arn:aws:sqs:us-east-1:000000000000:siproad-admin-products-sqs\", \"Condition\": {\"ArnEquals\": {\"aws:SourceArn\": \"arn:aws:sns:us-east-1:000000000000:siproad-admin-sns\"}}}]}"
-      }'
-      ```
-      ```
-      aws --endpoint-url=http://localhost:4566 sqs set-queue-attributes \
-      --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/siproad-admin-orders-sqs \
-      --attributes '{
-        "Policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": \"*\", \"Action\": \"SQS:SendMessage\", \"Resource\": \"arn:aws:sqs:us-east-1:000000000000:siproad-admin-orders-sqs\", \"Condition\": {\"ArnEquals\": {\"aws:SourceArn\": \"arn:aws:sns:us-east-1:000000000000:siproad-admin-sns\"}}}]}"
-      }'
-      ```
-      ```
-      aws --endpoint-url=http://localhost:4566 sqs set-queue-attributes \
-      --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/siproad-products-orders-sqs \
-      --attributes '{
-        "Policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": \"*\", \"Action\": \"SQS:SendMessage\", \"Resource\": \"arn:aws:sqs:us-east-1:000000000000:siproad-products-orders-sqs\", \"Condition\": {\"ArnEquals\": {\"aws:SourceArn\": \"arn:aws:sns:us-east-1:000000000000:siproad-products-sns\"}}}]}"
       }'
       ```
 
@@ -129,16 +114,6 @@ Lambda que replica la información en el microservicio de siproad-products-api.
           }
       }
       ```
-      ```
-      aws --endpoint-url=http://localhost:4566 sqs get-queue-attributes \
-      --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/siproad-admin-orders-sqs \
-      --attribute-names QueueArn
-      ```
-      ```
-      aws --endpoint-url=http://localhost:4566 sqs get-queue-attributes \
-      --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/siproad-products-orders-sqs \
-      --attribute-names QueueArn
-      ```
     
     * Suscribir SQS a SNS con los arn obtenidos __(repetir por cada asociación sns->sqs)__
       ```
@@ -153,18 +128,7 @@ Lambda que replica la información en el microservicio de siproad-products-api.
           "SubscriptionArn": "arn:aws:sns:us-east-1:000000000000:siproad-admin-sns:7d7b4fa0-e33c-4b84-8223-06556d535d80"
       }
       ```
-      ```
-      aws --endpoint-url=http://localhost:4566 sns subscribe \
-      --topic-arn arn:aws:sns:us-east-1:000000000000:siproad-admin-sns \
-      --protocol sqs \
-      --notification-endpoint arn:aws:sqs:us-east-1:000000000000:siproad-admin-orders-sqs
-      ```
-      ```
-      aws --endpoint-url=http://localhost:4566 sns subscribe \
-      --topic-arn arn:aws:sns:us-east-1:000000000000:siproad-products-sns \
-      --protocol sqs \
-      --notification-endpoint arn:aws:sqs:us-east-1:000000000000:siproad-products-orders-sqs
-      ```
+      
     * Prueba de SNS -> SQS
       * Enviar mensaje
         ```
@@ -177,10 +141,7 @@ Lambda que replica la información en el microservicio de siproad-products-api.
         aws --endpoint-url=http://localhost:4566 sqs receive-message \
         --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/siproad-admin-products-sqs
         ```
-        ```
-        aws --endpoint-url=http://localhost:4566 sqs receive-message \
-        --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/siproad-admin-orders-sqs
-        ```
+       
 * Suscribir lambda a sqs
   * Eliminar suscripcion a sqs en AWS (docker) (opcional)
     ```
@@ -196,20 +157,7 @@ Lambda que replica la información en el microservicio de siproad-products-api.
       --batch-size 10 \
       --function-response-types ReportBatchItemFailures
     ```
-    ```
-    aws --endpoint-url=http://localhost:4566 lambda create-event-source-mapping \
-      --function-name siproad-products-lambda \
-      --event-source arn:aws:sqs:us-east-1:000000000000:siproad-admin-orders-sqs \
-      --batch-size 10 \
-      --function-response-types ReportBatchItemFailures
-    ```
-    ```
-    aws --endpoint-url=http://localhost:4566 lambda create-event-source-mapping \
-      --function-name siproad-products-lambda \
-      --event-source arn:aws:sqs:us-east-1:000000000000:siproad-products-orders-sqs \
-      --batch-size 10 \
-      --function-response-types ReportBatchItemFailures
-    ```
+    
   * Probar lambda suscrito al sqs:
     * Ejecutar endpoint (/siproad-admin/companies/update) para escribir un mensaje en el SNS __siproad-admin-sns__ quien a su vez envia el mensaje al SQS __siproad-admin-products-sqs__ que levanta el LAMBDA __siproad-products-lambda__
       ```
