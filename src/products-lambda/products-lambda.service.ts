@@ -1,14 +1,15 @@
+import { PfxHttpResponseDto } from 'profaxnojs/axios';
 import { ProcessSummaryDto } from 'profaxnojs/util';
 
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 
-import { MessageDto } from './dto/data-replication.dto';
-import { ProcessEnum, SourceEnum } from './enum';
+import { ProcessEnum, SourceEnum } from './enums';
 import { Record, Event, Body, JsonBasic } from './interface';
 
 import { ProductsCompanyDto } from 'src/products/dto/products-company.dto';
-import { ProductsResponseDto } from 'src/products/dto/products-response-dto';
-import { ProductsCompanyService } from 'src/products/products-company.service';
+import { ProductsService } from 'src/products/products.service';
+import { ProductsEnum } from 'src/products/enums/products.enum';
+import { Message } from './interface/message.interface';
 
 @Injectable()
 export class ProductsLambdaService {
@@ -16,7 +17,7 @@ export class ProductsLambdaService {
   private readonly logger = new Logger(ProductsLambdaService.name);
 
   constructor(
-    private readonly productsCompanyService: ProductsCompanyService
+    private readonly productsService: ProductsService
   ) {}
 
   async processEvent(event: Event): Promise<any> {
@@ -40,7 +41,7 @@ export class ProductsLambdaService {
       this.logger.warn(`[${i}] processEvent: processing message, messageId=${record.messageId}`);
 
       await this.processMessage(record)
-      .then( (responseDto: ProductsResponseDto) => {
+      .then( (responseDto: PfxHttpResponseDto) => {
         processSummaryDto.rowsOK++;
         processSummaryDto.detailsRowsOK.push(`[${i}] messageId=${record.messageId}, response=${responseDto.message}`);
         this.logger.log(`[${i}] processEvent: message processed, messageId=${record.messageId}`);
@@ -68,34 +69,28 @@ export class ProductsLambdaService {
     return { batchItemFailures: failedMessages };
   }
 
-  private processMessage(record: Record): Promise<ProductsResponseDto> {
+  private processMessage(record: Record): Promise<PfxHttpResponseDto> {
     try {
-      const body: Body = JSON.parse(record.body);
-      const messageDto: MessageDto = JSON.parse(body.Message);
+      const body: any = JSON.parse(record.body);
+      const message: Message = body.Message ? JSON.parse(body.Message) : body;  // * TIPS: When a message comes from an SNS the message has a message field, and when it comes from an SQS the body is the message
 
-      // * replicate companies to products
-      if(messageDto.process == ProcessEnum.COMPANY_UPDATE) {
-        const dto: ProductsCompanyDto = JSON.parse(messageDto.jsonData);
-        
-        return this.productsCompanyService.updateCompany(dto)
-        .then( (responseDto: ProductsResponseDto) => {
-          return responseDto;
-        })
+      // * replicate companies
+      if(message.process == ProcessEnum.COMPANY_UPDATE) {
+        const dto: ProductsCompanyDto = JSON.parse(message.jsonData);
+        return this.productsService.update(ProductsEnum.PATH_COMPANY_UPDATE, dto);
       }
 
-      if(messageDto.process == ProcessEnum.COMPANY_DELETE) {
-        const jsonBasic: JsonBasic = JSON.parse(messageDto.jsonData);
-
-        return this.productsCompanyService.deleteCompany(jsonBasic.id)
-        .then( (responseDto: ProductsResponseDto) => {
-          return responseDto;
-        })
+      if(message.process == ProcessEnum.COMPANY_DELETE) {
+        const jsonBasic: JsonBasic = JSON.parse(message.jsonData);
+        return this.productsService.delete(ProductsEnum.PATH_COMPANY_DELETE, jsonBasic.id);
       }
     
-      throw new Error(`process not implemented, source=${messageDto.source}, process=${messageDto.process}`);
+      const response = new PfxHttpResponseDto(HttpStatus.BAD_REQUEST, `process not implemented, source=${message.source}, process=${message.process}`);
+      return Promise.resolve(response);
       
     } catch (error) {
-      throw error;
+      this.logger.error(`processMessage: error processing message, messageId=${record.messageId}, error`, error);
+      return Promise.reject(error);
     }
   }
 

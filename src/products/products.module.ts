@@ -2,11 +2,11 @@ import { PfxHttpModule } from 'profaxnojs/axios';
 
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ProductsCompanyService } from './products-company.service';
+import { ProductsService } from './products.service';
 
 @Module({
   imports: [ConfigModule, PfxHttpModule],
-  providers: [ProductsCompanyService],
-  exports: [ProductsCompanyService]
+  providers: [ProductsService],
+  exports: [ProductsService]
 })
 export class ProductsModule {}
