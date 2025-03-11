@@ -42,7 +42,7 @@ Lambda que replica la información en el microservicio de siproad-products-api.
 
 ### Configuración AWS (docker)
 * Apuntar el archivo .env a las variables de staging.
-* Crear contenedor de "aws" docker-compose -p aws up -d
+* Crear contenedor de "aws" ```docker-compose -p stg-aws up -d```
 
 ## Configuraciones manuales
 
