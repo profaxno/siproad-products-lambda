@@ -5,6 +5,8 @@ services:
     container_name: ${DOCKER_LOCAL_STACK_CONTAINER_NAME}
     entrypoint: ["/bin/sh", "-c", "/etc/localstack/init-resources.sh & exec docker-entrypoint.sh"]
     environment:
+      - LAMBDA_RUNTIME_ENVIRONMENT_TIMEOUT=30
+      - LAMBDA_EXECUTOR=docker-reuse
       - DOCKER_HOST=tcp://host.docker.internal:2375
       - SERVICES=sqs,sns,lambda,cloudwatch,logs
       - AWS_DEFAULT_REGION=${AWS_REGION}
